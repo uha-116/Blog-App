@@ -1,0 +1,82 @@
+
+
+GET http://localhost:2000/authorapi
+
+###
+POST http://localhost:2000/authorapi/newuser
+Content-Type:application/json
+
+{
+    "usertype":"Author",
+     "username":"prakash",
+     "password":"prakash@04",
+      "email":"prakash@gmail.com"
+}
+
+###
+POST http://localhost:2000/authorapi/login
+Content-Type:application/json
+
+{
+    "usertype":"author",
+     "username":"prakash",
+     "password":"prakash@04"
+}
+
+###
+POST http://localhost:2000/authorapi/articles
+Content-Type:application/json
+
+{
+    "article_id":"{{$timestamp}}",
+     "title":"Godavari",
+     "category":"Movies",
+      "img":"https://images.mubicdn.net/images/film/72582/cache-249603-1503290018/image-w1280.jpg",
+     "content": "Godavari is a film about Sriram, Sita, and the river cruise, from Rajahmundry to Bhadrachalam, that brings them together. It is a love story set against the scenic backdrop of the Godavari River aboard a cruise boat also called Godavari. Sriram, \"Ram\" (Sumanth), is an MS graduate in engineering from the United States. He returns to India, wanting to serve its people by entering politics. He is in love with his cousin Rajeswari \"Raji\" (Neetu Chandra) and hopes to marry her. Raji's father, however, trivializes Ram's idealistic nature and his modest financial status and does not want Raji to marry him. Sita Mahalakshmi \"Sita\" (Kamalinee Mukherjee) is a fashion designer who runs an unsuccessful clothing boutique store. Her parents, who are not very keen about her business, want her to get married instead. Sita, being an independent and career-oriented woman, is not enthusiastic about their idea. However, circumstances force her to reluctantly agree with her parents. Later, she closes her boutique due to losses. However, the marriage doesn't work out as the groom's family feels that she is 'too progressive and fast'. Frustrated and angry, Sita decides to take a break from everything to go on the Godavari River cruise.",
+     "date_creation":"{{$datetime iso8601}}",
+     "date_modification":"{{$datetime iso8601}}",
+     "username":"ritu",
+      "comments":[],
+      "status":true
+}
+
+###
+PUT  http://localhost:2000/authorapi/articles
+Content-Type:application/json
+
+{
+    "article_id":"1739295900",
+     "title":"Javascript",
+     "category":"Programming",
+     "content":"It runs in web browsers and enables developers to build features such as form validation, interactive maps, animations, and much more",
+     "date_creation":"2025-02-11T17:45:00.111Z",
+     "date_modification":"{{$datetime iso8601}}",
+     "username":"prakash",
+      "comments":[],
+      "status":true
+}
+
+###
+
+PUT  http://localhost:2000/authorapi/articles/1739295900
+Content-Type:application/json
+
+{
+    "article_id":"1739295900",
+     "title":"Javascript",
+     "category":"Programming",
+     "content":"It runs in web browsers and enables developers to build features such as form validation, interactive maps, animations, and much more",
+     "date_creation":"2025-02-11T17:45:00.111Z",
+     "date_modification":"{{$datetime iso8601}}",
+     "username":"prakash",
+      "comments":[],
+      "status":false
+}
+
+
+###
+GET http://localhost:2000/authorapi/articles/prakash
+
+###
+GET  http://localhost:2000/authorapi/articles/id/1740480690
+

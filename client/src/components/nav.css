@@ -1,0 +1,27 @@
+.main-section {
+    background-color: #000080;
+    max-height: 60vh;
+  }
+  
+  .search-container {
+    width: 500px;
+  }
+
+  .custom-dropdown {
+    position: absolute;
+    right: 0;
+    top: 60px; /* Adjust to align below the navbar */
+    width: auto;
+    min-width: 150px;
+    z-index: 1050;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  
+  @media (max-width: 250px) {
+    .search-container { width: 500px !important; }
+    .main-section h1, .main-section p { font-size: inherit; }
+  }
+

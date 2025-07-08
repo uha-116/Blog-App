@@ -1,0 +1,51 @@
+
+###
+GET http://localhost:2000/userapi
+
+###
+GET http://localhost:2000/userapi/articles
+
+###
+POST http://localhost:2000/userapi/newuser
+Content-Type:application/json
+
+{
+    "usertype":"User",
+     "username":"po",
+     "password":"po@04"
+}
+
+
+###
+POST http://localhost:2000/userapi/login
+Content-Type:application/json
+
+{
+    "usertype":"User",
+     "username":"Uharika",
+     "password":"uha@522"
+}
+
+###
+
+POST http://localhost:2000/userapi/comments
+Content-Type:application/json
+
+{
+  "id": "1740490833",
+  "comment_id": "9f3b524e-7742-4e27-8e26-e9f7b64c12a9",
+  "username": "Uharika",
+  "comments": "Nice article!",
+  "date": "2025-04-08T12:34:56.789Z"
+}
+
+###
+GET http://localhost:2000/userapi/comments/1740559286
+
+###
+DELETE http://localhost:2000/userapi/comments/1740490833/9f3b524e-7742-4e27-8e26-e9f7b64c12a9
+
+
+
+
+
