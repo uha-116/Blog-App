@@ -24,7 +24,7 @@ function UserArticles({ searchTerm }) {
     };
     fetchArticles();
     console.log("Current user:", currentuser);
-  }, []);
+  });
 
   const handleReadMore = async(articleId) => {
     navigate(`/articles/id/${articleId}`);
