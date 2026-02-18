@@ -6,6 +6,7 @@ authorapp=exp.Router()
 const expasyncerr=require('express-async-handler')
 const jwt=require('jsonwebtoken')
 const bcrypt=require('bcryptjs')
+const verifyToken = require('../middlewares/verifyToken')
 require('dotenv').config()
 
 let Author_Detailsobj;
@@ -48,14 +49,26 @@ authorapp.post('/login',expasyncerr(async(req,res)=>{
         // this compares the orginal password and the hashed password 
         if (await bcrypt.compare(ex.password,found.password))
            {
-            res.send({mssg:'author loginned',details:found})
+            const token = jwt.sign(
+                { username: found.username, usertype: found.usertype },
+                process.env.SECRET_KEY,
+                { expiresIn: '1d' }
+            );
+            res.send({
+                mssg: "Login successful",
+                token,
+                user: {
+                    username: found.username,
+                    usertype: found.usertype
+                }
+            })
            }
         else
         res.send({mssg:"Invalid password Try again"})
     }
 }))
 
-authorapp.post('/articles', expasyncerr(async (req, res) => {
+authorapp.post('/articles', verifyToken, expasyncerr(async (req, res) => {
     try {
         const ex = req.body;
         const inserted = await Article_Detailsobj.insertOne(ex);
@@ -68,7 +81,7 @@ authorapp.post('/articles', expasyncerr(async (req, res) => {
 }));
 
 
-authorapp.put('/articles/update', expasyncerr(async (req, res) => {
+authorapp.put('/articles/update', verifyToken, expasyncerr(async (req, res) => {
     let { article_id, title, category, img, content } = req.body;
     console.log({ article_id, title, category, img, content })
     await Article_Detailsobj.updateOne(
@@ -87,7 +100,7 @@ authorapp.put('/articles/update', expasyncerr(async (req, res) => {
     res.send({ mssg: "Updated article successfully" ,details:[{ article_id, title, category, img, content }]});
 }));
 
-authorapp.put('/articles/:article_id', expasyncerr(async (req, res) => {
+authorapp.put('/articles/:article_id', verifyToken, expasyncerr(async (req, res) => {
     const { article_id } = req.params;
     console.log("Received article_id:", article_id); // Debugging log
 
@@ -106,7 +119,7 @@ authorapp.put('/articles/:article_id', expasyncerr(async (req, res) => {
 }));
 
 
-authorapp.get('/articles/:username',expasyncerr(async(req,res)=>{
+authorapp.get('/articles/:username', verifyToken, expasyncerr(async(req,res)=>{
     console.log(req.params.username)
     let author_articles=await Article_Detailsobj.find({username:req.params.username ,status:true}).toArray()
     console.log(author_articles)

@@ -3,7 +3,7 @@ import { Link, useNavigate,useLocation} from "react-router-dom"; // Link: Enable
 import axios from "axios"; // axios: Sends HTTP requests to the backend (e.g., POST for signup/login)
 import "./Signup.css"; // Imports styles for forms, animations, and layouts
 import { useDispatch} from "react-redux";
-import { user_author_thunk } from "../redux/slices/userauthorslice";
+import { setAuthError, user_author_thunk } from "../redux/slices/userauthorslice";
 
 
 
@@ -14,6 +14,9 @@ export default function SignupLoginForm() {
   const dispatch = useDispatch();
   const location = useLocation(); // 🆕 Get location state
 
+  useEffect(() => {
+    dispatch(setAuthError(null));
+  }, []);
   /*
     handleSignup - Handles signup form submission
     Steps:
@@ -80,7 +83,7 @@ export default function SignupLoginForm() {
     try {
       const res = await axios.post(`http://localhost:2000/${endpoint}`, formData); // Send login request
       
-      if (res.data.mssg === "author loginned" || res.data.mssg === "User loginned") {
+      if (res.data.mssg === "Login successful" || res.data.mssg === "author loginned" || res.data.mssg === "User loginned") {
         // ✅ Login successful: redirect to appropriate page
         navigate(formData.usertype === "Author" ? "/authorarticles" : "/userarticles");
       } else {
@@ -140,3 +143,4 @@ export default function SignupLoginForm() {
   </div>
   );
 }
+

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
-import axios from "axios";
+import api from "../services/api";
+import { requireAuthForAction } from "../services/authGuard";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -13,11 +14,14 @@ function Authorarticles() {
   const location=useLocation();
   console.log("Location State:", location.state);
   useEffect(() => {
+    if (!requireAuthForAction({ requiredRole: "Author" })) return;
+    if (!currentuser?.username) return;
+
     const fetchArticles = async () => {
       try {
         if (currentuser) {
-          const res = await axios.get(`http://localhost:2000/authorapi/articles/${currentuser.details.username}`);
-          setArticles(res.data.data);
+          const res = await api.get(`/authorapi/articles/${currentuser.username}`);
+          setArticles(Array.isArray(res.data?.data) ? res.data.data : []);
         }
       } catch (error) {
         console.error("Error fetching articles:", error);
@@ -26,7 +30,7 @@ function Authorarticles() {
     if (currentuser) {
       fetchArticles();
     }
-  }, [currentuser,location.state?.refresh]);
+  }, [currentuser?.username,location.state?.refresh]);
   useEffect(() => {
     if (location.state?.refresh) {
       navigate(location.pathname, { replace: true, state: {} });
@@ -34,6 +38,7 @@ function Authorarticles() {
   }, [location, navigate]);
 
   const handleNavigate = () => {
+    if (!requireAuthForAction({ requiredRole: "Author" })) return;
     console.log("Navigating to /authorarticles/new"); // Debug log
     navigate("/authorarticles/new");
   };
@@ -42,7 +47,8 @@ function Authorarticles() {
     setSortOption(event.target.value);
   };
 
-  let sortedArticles = [...articles];
+  const safeArticles = Array.isArray(articles) ? articles : [];
+  let sortedArticles = [...safeArticles];
   if (sortOption === "date") {
     sortedArticles.sort((a, b) => new Date(b.date_modification) - new Date(a.date_modification));
   }

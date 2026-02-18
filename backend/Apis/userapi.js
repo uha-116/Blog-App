@@ -4,6 +4,9 @@ userapp = exp.Router();
 
 // importing bcryptjs
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const verifyToken = require('../middlewares/verifyToken');
+require('dotenv').config();
 
 // handles asynchronous errors and sends to the error handler middleware
 const expasyncerr = require('express-async-handler');
@@ -28,7 +31,7 @@ userapp.get('/articles', expasyncerr(async (req, res) => {
     
     let article = await Article_Detailsobj.find({ status: true }).toArray();
     if (article.length == 0) {
-        res.send({ mssg: "No articles found " });
+        res.send({ mssg: "No articles found", data: [] });
     } else {
         res.send({ mssg: "User Article details", data: article });
     }
@@ -58,7 +61,19 @@ userapp.post('/login', expasyncerr(async (req, res) => {
     } else {
         // this compares the original password and the hashed password 
         if (await bcrypt.compare(ex.password, found.password)) {
-            res.send({ mssg: 'User loginned', details: found });
+            const token = jwt.sign(
+                { username: found.username, usertype: found.usertype },
+                process.env.SECRET_KEY,
+                { expiresIn: '1d' }
+            );
+            res.send({
+                mssg: "Login successful",
+                token,
+                user: {
+                    username: found.username,
+                    usertype: found.usertype
+                }
+            });
         } else {
             res.send({ mssg: "Invalid password. Try again" });
         }
@@ -66,7 +81,7 @@ userapp.post('/login', expasyncerr(async (req, res) => {
 }));
 
 // add comment without authentication
-userapp.post('/comments', expasyncerr(async (req, res) => {
+userapp.post('/comments', verifyToken, expasyncerr(async (req, res) => {
     const { id,comment_id, username, comments, date } = req.body; 
 
     let response=await Article_Detailsobj.updateOne(
@@ -83,7 +98,7 @@ userapp.get('/comments/:article_id', expasyncerr(async (req, res) => {
     res.send({showcomment:article[0].comments})
 }));
 
-userapp.delete('/comments/:articleId/:commentId', expasyncerr(async (req, res) => {
+userapp.delete('/comments/:articleId/:commentId', verifyToken, expasyncerr(async (req, res) => {
     const { articleId, commentId } = req.params;
   
     const response = await Article_Detailsobj.updateOne(

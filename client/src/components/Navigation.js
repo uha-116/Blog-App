@@ -20,7 +20,7 @@ const Navigation = ({ setSearchTerm }) => {
 
   useEffect(() => {
     if (loginstatus) {
-      navigate(currentuser.details.usertype === "Author" ? "/authorarticles" : "/userarticles");
+      navigate(currentuser.usertype === "Author" ? "/authorarticles" : "/userarticles");
     }
   }, [loginstatus]);
 
@@ -95,7 +95,7 @@ const Navigation = ({ setSearchTerm }) => {
                       color: isArticleDisplayPage || isNewArticlePage ? "white" : "black",
                     }}
                   >
-                    {currentuser.details.username} <sub>({currentuser.details.usertype})</sub>
+                    {currentuser.username} <sub>({currentuser.usertype})</sub>
                   </span>
                 </div>
                 <Link
@@ -129,7 +129,7 @@ const Navigation = ({ setSearchTerm }) => {
                   <div className="dropdown-item d-flex align-items-center">
                     <FaUser className="fs-4 me-2 text-dark" />
                     <span>
-                      {currentuser.details.username} <sub>({currentuser.details.usertype})</sub>
+                      {currentuser.username} <sub>({currentuser.usertype})</sub>
                     </span>
                   </div>
                   <Link
@@ -154,7 +154,7 @@ const Navigation = ({ setSearchTerm }) => {
         <div className="main-section text-center text-white py-5 mt-5" style={{ backgroundColor: "#001f7f" }}>
           <div className="container">
             <h1 className="display-4 fw-bold">
-              {loginstatus ? `Hi ${currentuser.details.username}!` : "Welcome to Blog"}
+              {loginstatus ? `Hi ${currentuser.username}!` : "Welcome to Blog"}
             </h1>
             <p className="lead">Explore a number of blogs from various categories!</p>
 

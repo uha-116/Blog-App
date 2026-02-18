@@ -7,6 +7,8 @@ import "bootstrap-icons/font/bootstrap-icons.css";
 
 function UserArticles({ searchTerm }) {
   const [articles, setArticles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [sortOption, setSortOption] = useState(""); // Initially no sorting
   
   const { currentuser } = useSelector((state) => state.userauthorlogin);
@@ -16,15 +18,22 @@ function UserArticles({ searchTerm }) {
    
     const fetchArticles = async () => {
       try {
+        setIsLoading(true);
+        setErrorMessage("");
         const res = await axios.get("http://localhost:2000/userapi/articles");
-        setArticles(res.data.data);
+        const apiArticles = Array.isArray(res?.data?.data) ? res.data.data : [];
+        setArticles(apiArticles);
       } catch (error) {
         console.error("Error fetching articles:", error);
+        setArticles([]);
+        setErrorMessage("Unable to load articles right now.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchArticles();
     console.log("Current user:", currentuser);
-  });
+  }, [currentuser]);
 
   const handleReadMore = async(articleId) => {
     navigate(`/articles/id/${articleId}`);
@@ -35,8 +44,11 @@ function UserArticles({ searchTerm }) {
     setSortOption(event.target.value);
   };
 
-  const filteredArticles = articles.filter(article =>
-    !searchTerm || article.title.toLowerCase().includes(searchTerm.toLowerCase())
+  const safeArticles = Array.isArray(articles) ? articles : [];
+  const normalizedSearchTerm = (searchTerm || "").toLowerCase();
+  const filteredArticles = safeArticles.filter((article) =>
+    !normalizedSearchTerm ||
+    (article?.title || "").toLowerCase().includes(normalizedSearchTerm)
   );
 
   let sortedArticles = [...filteredArticles];
@@ -92,7 +104,17 @@ function UserArticles({ searchTerm }) {
       </div>
 
       <div className="row">
-        {sortOption ? (
+        {isLoading && (
+          <div className="col-12 text-center">
+            <p className="fw-semibold text-secondary">Loading articles...</p>
+          </div>
+        )}
+        {!isLoading && errorMessage && (
+          <div className="col-12 text-center">
+            <p className="fw-semibold text-danger">{errorMessage}</p>
+          </div>
+        )}
+        {!isLoading && !errorMessage && (sortOption ? (
           Object.keys(groupedArticles).sort().map((groupKey, idx) => (
             <div key={idx} className="col-12">
               <h4 className="fw-bold mt-4 text-decoration-underline" style={{ color: "#001f7f" }}>{groupKey.toUpperCase()}</h4>
@@ -112,7 +134,7 @@ function UserArticles({ searchTerm }) {
                       <div className="card-body d-flex flex-column">
                         <h5 className="card-title fw-bold" style={{ color: "#001f7f" }}>{article.title}</h5>
                         <p className="card-text text-secondary">
-                          {article.content.slice(0, 100)}{article.content.length > 100 && "..."}
+                          {(article?.content || "").slice(0, 100)}{(article?.content || "").length > 100 && "..."}
                         </p>
                         <button
   className="btn mt-auto rounded-pill text-white"
@@ -123,7 +145,7 @@ function UserArticles({ searchTerm }) {
 </button>
                       </div>
                       <div className="card-footer bg-light text-muted text-start rounded-bottom-4">
-                        Last updated on {new Date(article.date_modification).toLocaleString()} by {article.username}
+                        Last updated on {article?.date_modification ? new Date(article.date_modification).toLocaleString() : "Unknown"} by {article?.username || "Unknown"}
                       </div>
                     </div>
                   </div>
@@ -148,7 +170,7 @@ function UserArticles({ searchTerm }) {
                   <div className="card-body d-flex flex-column">
                     <h5 className="card-title fw-bold" style={{ color: "#001f7f" }}>{article.title}</h5>
                     <p className="card-text text-secondary">
-                      {article.content.slice(0, 100)}{article.content.length > 100 && "..."}
+                      {(article?.content || "").slice(0, 100)}{(article?.content || "").length > 100 && "..."}
                     </p>
                     <button
   className="btn mt-auto rounded-pill text-white"
@@ -159,7 +181,7 @@ function UserArticles({ searchTerm }) {
 </button>
                   </div>
                   <div className="card-footer bg-light text-muted text-start rounded-bottom-4">
-                    Last updated on {new Date(article.date_modification).toLocaleString()} by {article.username}
+                    Last updated on {article?.date_modification ? new Date(article.date_modification).toLocaleString() : "Unknown"} by {article?.username || "Unknown"}
                   </div>
                 </div>
               </div>
@@ -169,7 +191,7 @@ function UserArticles({ searchTerm }) {
               <p className="fw-semibold text-secondary">No articles available.</p>
             </div>
           )
-        )}
+        ))}
       </div>
     </div>
   );

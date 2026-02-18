@@ -1,25 +1,40 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { v4 as uid } from 'uuid';
-import axios from "axios";
+import api from "../services/api";
+import { requireAuthForAction } from "../services/authGuard";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { useSelector } from "react-redux";
 import { FaEdit, FaTrash ,FaUserCircle} from "react-icons/fa";
 function ArticleDisplay() {
+  const ALERT_DURATION_MS = 3000;
   const { article_id } = useParams();
   const [article, setArticle] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
   const [comment, setComment] = useState("");
   const [comments, setComments] = useState([]);
   const [error, setError] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const navigate = useNavigate();
   const [refreshComments, setRefreshComments] = useState(false);
+  const errorTimerRef = useRef(null);
 
-  const { currentuser, loginstatus } = useSelector((state) => state.userauthorlogin) || {};
+  const { currentuser } = useSelector((state) => state.userauthorlogin) || {};
+
+  const showTransientError = (message) => {
+    if (errorTimerRef.current) {
+      clearTimeout(errorTimerRef.current);
+    }
+    setError(message);
+    errorTimerRef.current = setTimeout(() => {
+      setError("");
+    }, ALERT_DURATION_MS);
+  };
 
   const fetchComments = async () => {
     try {
-      const res = await axios.get(`http://localhost:2000/userapi/comments/${article_id}`);
+      const res = await api.get(`/userapi/comments/${article_id}`);
       console.log("Fetched Comments:", res.data.showcomment);
       setComments(res.data.showcomment);  // Storing the comments
     } catch (error) {
@@ -28,11 +43,24 @@ function ArticleDisplay() {
   };
   useEffect(() => {
     const fetchArticleById = async () => {
+      setIsLoading(true);
+      setIsNotFound(false);
       try {
-        const res = await axios.get(`http://localhost:2000/authorapi/articles/id/${article_id}`);
-        setArticle(res.data.data[0]);
+        const res = await api.get(`/authorapi/articles/id/${article_id}`);
+        const fetchedArticle = res?.data?.data?.[0];
+
+        if (!fetchedArticle) {
+          setArticle(null);
+          setIsNotFound(true);
+        } else {
+          setArticle(fetchedArticle);
+        }
       } catch (err) {
         console.error("Error fetching article:", err);
+        setArticle(null);
+        setIsNotFound(true);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -40,10 +68,48 @@ function ArticleDisplay() {
     fetchComments();
   }, [article_id,refreshComments]);
 
+  useEffect(() => {
+    if (isNotFound) {
+      navigate("/not-found", { replace: true });
+    }
+  }, [isNotFound, navigate]);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) {
+        clearTimeout(errorTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleEditArticle = () => {
+    if (
+      !requireAuthForAction({
+        requiredRole: "Author",
+        ownerUsername: article?.username,
+        checkOwnership: true,
+      })
+    ) {
+      return;
+    }
+    navigate("/authorarticles/new", { state: { article } });
+  };
+
   const handleDeleteConfirm = async () => {
+    if (
+      !requireAuthForAction({
+        requiredRole: "Author",
+        ownerUsername: article?.username,
+        checkOwnership: true,
+      })
+    ) {
+      setShowDeleteModal(false);
+      return;
+    }
+
     try {
       const updatedArticle = { ...article, status: false };
-      await axios.put(`http://localhost:2000/authorapi/articles/${article_id}`, updatedArticle);
+      await api.put(`/authorapi/articles/${article_id}`, updatedArticle);
       setArticle(null);
       navigate("/authorarticles", { state: { refresh: true } });
     } catch (error) {
@@ -54,53 +120,53 @@ function ArticleDisplay() {
   };
   const handleDeleteComment = async (comment) => {
     console.log("Trying to delete:", comment);
-    if (!loginstatus) {
-      setError("Please login to delete the comment.");
+    if (
+      !requireAuthForAction({
+        ownerUsername: comment.username,
+        checkOwnership: true,
+        wrongRoleMessage: "You are not allowed to delete this comment.",
+      })
+    ) {
       return;
     }
-  
-    if (comment.username !== currentuser.details.username) {
-      setError("You can't delete someone else's comment");
-      return;
-    }
-  
+
     try {
-      await axios.delete(
-        `http://localhost:2000/userapi/comments/${article_id}/${comment.comment_id}`
+      await api.delete(
+        `/userapi/comments/${article_id}/${comment.comment_id}`
       );
       setRefreshComments((prev) => !prev); // refresh to reflect changes
     } catch (err) {
       console.error("Error deleting comment:", err);
-      setError("Failed to delete comment. Try again.");
+      showTransientError("Failed to delete comment. Try again.");
     }
   };
   
   const handleComment = async () => {
-   if (!loginstatus)
-   navigate("/signup")
-   else
-   {
+   if (!requireAuthForAction()) {
+    return;
+   }
+
     try {
       const commentData={
         id:article_id ,
         comment_id: uid(),
-        username:currentuser.details.username,
+        username:currentuser.username,
         comments:comment,
         date:new Date().toISOString()
       }
-      const res=await axios.post(`http://localhost:2000/userapi/comments`, commentData);
+      await api.post(`/userapi/comments`, commentData);
       setComment("");
       setRefreshComments((prev) => !prev); 
     } catch (error) {
-      console.error("Error deleting article:", error);
-      alert("Failed to delete article. Please try again.");
+      console.error("Error adding comment:", error);
+      showTransientError("Failed to add comment. Please try again.");
     }
-    
-   }
   };
   return (
     <div>
-      {article ? (
+      {isLoading || isNotFound ? (
+        <p className="text-center mt-4">Loading article...</p>
+      ) : (
         <div
           className="article-container d-flex align-items-center justify-content-center"
           style={{
@@ -122,19 +188,16 @@ function ArticleDisplay() {
           >
             <div className="d-flex justify-content-between align-items-center">
               <h2 className="fw-bold">{article.title}</h2>
-              {currentuser?.details?.usertype === "Author" &&
-                currentuser.details.username === article.username && (
-                  <div>
-                    <button className="btn me-2 btn-info" 
-                     onClick={() => navigate("/authorarticles/new", { state: { article } })}
-                    >
-                      <FaEdit />
-                    </button>
-                    <button className="btn btn-danger" onClick={() => setShowDeleteModal(true)}>
-                      <FaTrash />
-                    </button>
-                  </div>
-                )}
+              <div>
+                <button className="btn me-2 btn-info" 
+                 onClick={handleEditArticle}
+                >
+                  <FaEdit />
+                </button>
+                <button className="btn btn-danger" onClick={() => setShowDeleteModal(true)}>
+                  <FaTrash />
+                </button>
+              </div>
             </div>
 
             <p>
@@ -189,30 +252,26 @@ function ArticleDisplay() {
   )}
 </div>
 
-            {!(loginstatus && currentuser?.details?.usertype === "Author") && (
-              <div className="mt-4">
-                <h5>Add a Comment</h5>
-                <textarea
-                  className="form-control mb-2"
-                  rows="3"
-                  placeholder="Write your comment here..."
-                  value={comment}
-                  onChange={(e) => setComment(e.target.value)}
-                ></textarea>
+            <div className="mt-4">
+              <h5>Add a Comment</h5>
+              <textarea
+                className="form-control mb-2"
+                rows="3"
+                placeholder="Write your comment here..."
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+              ></textarea>
 
-                <button
-                  className="btn"
-                  onClick={handleComment}
-                  style={{ backgroundColor: "#001f7f", color: "white" }}
-                >
-                  Add Comment
-                </button>
-              </div>
-            )}
+              <button
+                className="btn"
+                onClick={handleComment}
+                style={{ backgroundColor: "#001f7f", color: "white" }}
+              >
+                Add Comment
+              </button>
+            </div>
           </div>
         </div>
-      ) : (
-        <p className="text-center mt-4">Loading article...</p>
       )}
 
      {/* Delete Confirmation Modal */}

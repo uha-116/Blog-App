@@ -13,8 +13,8 @@ export const user_author_thunk = createAsyncThunk(
 
       let res = await axios.post(endpoint, credobj);
       console.log("API Response:", res.data); // Debugging log
-      if (res.data.mssg === "User loginned" || res.data.mssg === "author loginned") {
-        return res.data;
+      if (res.data.mssg === "Login successful") {
+        return { user: res.data.user, token: res.data.token };
       } else {
         return thunkAPI.rejectWithValue(res.data.mssg);
       }
@@ -34,14 +34,20 @@ export const userauthorslice = createSlice({
   initialState: {
     isPending: false,
     currentuser: {},
+    token: null,
     loginstatus: false,
     errorOccured: false,
     errMsg: "",
   },
   reducers: {
+    setAuthError: (state, action) => {
+      state.errorOccured = true;
+      state.errMsg = action.payload;
+    },
     reset: (state) => {
       state.isPending = false;
       state.currentuser = {};
+      state.token = null;
       state.loginstatus = false;
       state.errorOccured = false;
       state.errMsg = "";
@@ -54,8 +60,9 @@ export const userauthorslice = createSlice({
       })
       .addCase(user_author_thunk.fulfilled, (state, action) => {
         state.isPending = false;
+        state.currentuser = action.payload.user;
+        state.token = action.payload.token;
         state.loginstatus = true;
-        state.currentuser = action.payload;
         state.errorOccured = false;
         state.errMsg = "";
       })
@@ -63,11 +70,12 @@ export const userauthorslice = createSlice({
         state.isPending = false;
         state.loginstatus = false;
         state.currentuser = {};
+        state.token = null;
         state.errorOccured = true;
         state.errMsg = action.payload;
       });
   },
 });
 
-export const { reset } = userauthorslice.actions;
+export const { setAuthError, reset } = userauthorslice.actions;
 export default userauthorslice.reducer;

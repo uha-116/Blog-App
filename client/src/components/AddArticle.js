@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useSelector } from "react-redux";
-import axios from "axios";
+import api from "../services/api";
+import { requireAuthForAction } from "../services/authGuard";
 import { useNavigate,useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 
@@ -14,6 +15,7 @@ function AddArticle() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!requireAuthForAction({ requiredRole: "Author" })) return;
 
     const articleData = {
       article_id: prev? prev.article_id:Date.now().toString(),
@@ -23,20 +25,20 @@ function AddArticle() {
       content: e.target.content.value,
       date_creation: new Date().toISOString(),
       date_modification: new Date().toISOString(),
-      username: currentuser.details.username,
+      username: currentuser.username,
       comments: [],
       status: true,
     };
     let res;
     try {
       if(prev){
-       res = await axios.put("http://localhost:2000/authorapi/articles/update", articleData, {
+       res = await api.put("/authorapi/articles/update", articleData, {
         headers: { "Content-Type": "application/json" },
       });
     }
     else
     {
-       res = await axios.post("http://localhost:2000/authorapi/articles", articleData, {
+       res = await api.post("/authorapi/articles", articleData, {
         headers: { "Content-Type": "application/json" },
       });
        
