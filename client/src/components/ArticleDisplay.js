@@ -33,6 +33,11 @@ function ArticleDisplay() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // 🔥 UI Guard Logic
+  const canEditOrDelete =
+    currentuser?.usertype === "Author" &&
+    currentuser?.username === article?.username;
+
   useEffect(() => {
     if (isNotFound) {
       navigate("/not-found", { replace: true });
@@ -102,20 +107,25 @@ function ArticleDisplay() {
         >
           <div className="d-flex justify-content-between align-items-center">
             <h2>{article.title}</h2>
-            <div>
-              <button
-                className="btn btn-info me-2"
-                onClick={handleEditArticle}
-              >
-                <FaEdit />
-              </button>
-              <button
-                className="btn btn-danger"
-                onClick={() => setShowDeleteModal(true)}
-              >
-                <FaTrash />
-              </button>
-            </div>
+
+            {/* 🔥 Edit/Delete only visible if owner */}
+            {canEditOrDelete && (
+              <div>
+                <button
+                  className="btn btn-info me-2"
+                  onClick={handleEditArticle}
+                >
+                  <FaEdit />
+                </button>
+
+                <button
+                  className="btn btn-danger"
+                  onClick={() => setShowDeleteModal(true)}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            )}
           </div>
 
           <p><strong>Author:</strong> {article.username}</p>
